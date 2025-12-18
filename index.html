@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f57c00, #ef6c00);
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #d32f2f, #c62828);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .game-status {
+            text-align: center;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin: 10px 0;
+            color: white;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-running { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .status-paused { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .status-stopped { background: linear-gradient(135deg, #9e9e9e, #757575); }
+
+        .portfolio-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .portfolio-card {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .portfolio-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .portfolio-card h3 {
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .portfolio-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        /* Main grid layout - everything visible without scrolling */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .left-panel {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .right-panel {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .news-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease-out;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trading-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease-out;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .portfolio-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease-out;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .transaction-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 1s ease-out;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .section-title {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .scrollable-content {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .stock-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .stock-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+
+        .stock-info {
+            flex: 1;
+        }
+
+        .stock-symbol {
+            font-weight: bold;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .stock-company {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .stock-price {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 0 15px;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .price-positive { color: #4CAF50; }
+        .price-negative { color: #f44336; }
+
+        .stock-change {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .change-positive {
+            background: #e8f5e8;
+            color: #4CAF50;
+        }
+
+        .change-negative {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .trade-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .btn-buy {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-buy:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-sell {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-sell:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .holdings-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .holding-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .holding-info {
+            flex: 1;
+        }
+
+        .holding-symbol {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .holding-shares {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .holding-value {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .trade-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Enhanced news ticker */
+        .news-ticker {
+            background: linear-gradient(45deg, #1a1a1a, #333);
+            color: #fff;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #667eea;
+        }
+
+        .news-ticker-content {
+            animation: scroll 25s linear infinite;
+            white-space: nowrap;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* Market shock effects */
+        .market-crash {
+            background: linear-gradient(45deg, #ff1744, #d50000);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #fff;
+            animation: shake 0.5s ease-in-out 0s 3;
+            box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+        }
+
+        .market-boom {
+            background: linear-gradient(45deg, #00e676, #00c853);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #fff;
+            animation: bounce 0.6s ease-in-out 0s 3;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+        }
+
+        .breaking-news {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #fff;
+            animation: pulse 2s infinite;
+        }
+
+        .news-badge {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .news-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .news-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+
+        .news-item.positive {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .news-item.negative {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .news-headline {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .news-details {
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+
+        .news-impact {
+            font-size: 0.75em;
+            font-weight: bold;
+            padding: 3px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .impact-positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .impact-negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .news-timestamp {
+            float: right;
+            font-size: 0.7em;
+            color: #999;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-type {
+            font-weight: bold;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+        }
+
+        .type-buy {
+            background: #e8f5e8;
+            color: #4CAF50;
+        }
+
+        .type-sell {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideInDown 0.3s ease-out;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ccc;
+        }
+
+        .modal-body {
+            padding: 30px;
+            line-height: 1.6;
+        }
+
+        .instruction-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .instruction-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .instruction-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+        }
+
+        .instruction-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instruction-section li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .instruction-section li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+            
+            .right-panel {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                grid-template-rows: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .portfolio-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .game-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .control-btn {
+                width: 200px;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .right-panel {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stock Market Challenge</h1>
+            <p>Learn trading with virtual money!</p>
+            
+            <div class="game-controls">
+                <button class="control-btn btn-start" id="startBtn" onclick="startGame()">Start Market</button>
+                <button class="control-btn btn-pause" id="pauseBtn" onclick="pauseGame()" disabled>Pause Market</button>
+                <button class="control-btn btn-reset" onclick="resetGame()">Reset Game</button>
+                <button class="btn btn-primary" onclick="toggleInstructions()" style="width: auto; padding: 10px 20px;">
+                    View Instructions
+                </button>
+            </div>
+
+            <div class="game-status" id="gameStatus">Market Stopped - Press Start to Begin Trading</div>
+        </div>
+
+        <!-- Instructions Modal -->
+        <div id="instructionsModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>How to Play Stock Market Challenge</h2>
+                    <span class="close" onclick="toggleInstructions()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="instruction-section">
+                        <h3>Game Objective</h3>
+                        <p>Start with $10,000 in virtual money and try to grow your portfolio by buying and selling stocks. Learn how real stock markets work without any financial risk!</p>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>Game Controls</h3>
+                        <ul>
+                            <li><strong>Start Market:</strong> Begin price updates and news events</li>
+                            <li><strong>Pause Market:</strong> Stop price changes while you analyze and make trades</li>
+                            <li><strong>Reset Game:</strong> Return to starting conditions with $10,000</li>
+                            <li><strong>Trading is always available:</strong> You can buy/sell stocks whether the market is running or paused</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>Market Shocks & Booms</h3>
+                        <ul>
+                            <li><strong>Market Crashes:</strong> Sudden events that cause widespread price drops</li>
+                            <li><strong>Market Booms:</strong> Positive events that drive all stocks higher</li>
+                            <li><strong>Breaking News:</strong> Major events affecting individual companies</li>
+                            <li><strong>Economic Events:</strong> Real-world scenarios that impact the entire market</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>Trading Tips</h3>
+                        <ul>
+                            <li><strong>Buy Low, Sell High:</strong> The basic principle of profitable trading</li>
+                            <li><strong>Watch the News:</strong> Major events can cause dramatic price changes</li>
+                            <li><strong>Diversify:</strong> Don't put all your money in one stock</li>
+                            <li><strong>Use Pause Strategically:</strong> Pause to analyze trends during volatile periods</li>
+                            <li><strong>React to Shocks:</strong> Market crashes and booms present opportunities</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="portfolio-summary">
+            <div class="portfolio-grid">
+                <div class="portfolio-card">
+                    <h3>Total Portfolio Value</h3>
+                    <div class="value" id="totalValue">$10,000.00</div>
+                </div>
+                <div class="portfolio-card">
+                    <h3>Available Cash</h3>
+                    <div class="value" id="availableCash">$10,000.00</div>
+                </div>
+                <div class="portfolio-card">
+                    <h3>Total Profit/Loss</h3>
+                    <div class="value" id="totalPL">$0.00</div>
+                </div>
+                <div class="portfolio-card">
+                    <h3>Number of Trades</h3>
+                    <div class="value" id="tradeCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="left-panel">
+                <div class="news-panel">
+                    <h2 class="section-title">Market News</h2>
+                    
+                    <div class="news-ticker">
+                        <div class="news-ticker-content" id="newsTicker">
+                            MARKETS LIVE • Stock Market Challenge • Real-time price updates • Trade with virtual money
+                        </div>
+                    </div>
+
+                    <div id="breakingNews"></div>
+                    
+                    <div class="scrollable-content" id="newsStream">
+                        <div class="news-item">
+                            <div class="news-headline">Welcome to the Stock Market Challenge!</div>
+                            <div class="news-details">Start the market to begin price updates and trading. Watch for market shocks and booms!</div>
+                            <div class="news-timestamp">Just now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trading-panel">
+                    <h2 class="section-title">Stock Market</h2>
+                    <div id="messageArea"></div>
+                    
+                    <div class="scrollable-content">
+                        <div class="stock-list" id="stockList"></div>
+                    </div>
+                    
+                    <div class="trade-form">
+                        <h3>Place Order</h3>
+                        <div class="form-group">
+                            <label for="tradeSymbol">Stock Symbol</label>
+                            <select id="tradeSymbol">
+                                <option value="">Select a stock</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeType">Order Type</label>
+                            <select id="tradeType">
+                                <option value="buy">Buy</option>
+                                <option value="sell">Sell</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeShares">Number of Shares</label>
+                            <input type="number" id="tradeShares" min="1" placeholder="Enter number of shares">
+                        </div>
+                        <button class="btn btn-primary" onclick="executeTrade()">Execute Trade</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="portfolio-panel">
+                    <h2 class="section-title">Your Portfolio</h2>
+                    <div class="scrollable-content">
+                        <div class="holdings-list" id="holdingsList">
+                            <p style="text-align: center; color: #666; padding: 20px;">No holdings yet. Start trading!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="transaction-panel">
+                    <h2 class="section-title">Recent Transactions</h2>
+                    <div class="scrollable-content">
+                        <div id="transactionHistory">
+                            <p style="text-align: center; color: #666; padding: 20px;">No transactions yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game control variables
+        let gameRunning = false;
+        let priceUpdateInterval = null;
+        let newsUpdateInterval = null;
+        let tickerUpdateInterval = null;
+        let shockInterval = null;
+
+        // Enhanced news system with market shocks
+        let majorEvents = [
+            {
+                type: 'market_crash',
+                headline: 'MARKET CRASH: Federal Reserve Emergency Meeting Called',
+                details: 'Unexpected emergency Fed meeting sparks panic selling across all sectors as investors fear major policy changes.',
+                impact: 'All stocks down 15-25%',
+                priceEffect: -0.20
+            },
+            {
+                type: 'market_crash',
+                headline: 'FLASH CRASH: Trading Algorithm Malfunction',
+                details: 'Major trading algorithm error causes widespread sell-off as automated systems dump positions.',
+                impact: 'Market down 10-20%',
+                priceEffect: -0.15
+            },
+            {
+                type: 'market_crash',
+                headline: 'ECONOMIC SHOCK: Major Bank Collapse Announced',
+                details: 'One of the largest banks announces insolvency, triggering fears of financial contagion.',
+                impact: 'Massive sell-off expected',
+                priceEffect: -0.25
+            },
+            {
+                type: 'market_boom',
+                headline: 'MARKET SURGE: Breakthrough AI Technology Announced',
+                details: 'Revolutionary AI breakthrough promises to transform multiple industries, sparking investor optimism.',
+                impact: 'Tech stocks soar 20-30%',
+                priceEffect: 0.25
+            },
+            {
+                type: 'market_boom',
+                headline: 'BULL RALLY: Record Economic Growth Reported',
+                details: 'GDP growth exceeds all expectations, unemployment hits historic lows, fueling market euphoria.',
+                impact: 'Broad market rally 15-25%',
+                priceEffect: 0.20
+            },
+            {
+                type: 'market_boom',
+                headline: 'GREEN ENERGY REVOLUTION: $1 Trillion Investment Announced',
+                details: 'Massive global investment in renewable energy sends clean tech stocks skyrocketing.',
+                impact: 'Energy sector up 25-35%',
+                priceEffect: 0.30
+            }
+        ];
+
+        let newsEvents = [
+            // Apple News
+            {
+                symbol: 'AAPL',
+                type: 'positive',
+                headline: 'Apple Reports Record iPhone Sales',
+                details: 'Apple Inc. announces stronger than expected iPhone sales for the quarter, beating analyst expectations.',
+                impact: 'Stock price may rise 2-5%',
+                priceEffect: 0.035
+            },
+            {
+                symbol: 'AAPL',
+                type: 'negative',
+                headline: 'Apple Faces Supply Chain Disruption',
+                details: 'Manufacturing delays reported at key Apple suppliers, potentially affecting product availability.',
+                impact: 'Stock price may decline 1-3%',
+                priceEffect: -0.025
+            },
+            {
+                symbol: 'AAPL',
+                type: 'positive',
+                headline: 'Apple Launches Revolutionary AR Glasses',
+                details: 'Apple unveils breakthrough augmented reality glasses, potentially creating a new product category.',
+                impact: 'Stock price may surge 8-15%',
+                priceEffect: 0.12
+            },
+            
+            // Google News
+            {
+                symbol: 'GOOGL',
+                type: 'positive',
+                headline: 'Google Achieves Quantum Computing Breakthrough',
+                details: 'Google announces major quantum computing milestone, potentially revolutionizing computing forever.',
+                impact: 'Stock price may explode 10-20%',
+                priceEffect: 0.15
+            },
+            {
+                symbol: 'GOOGL',
+                type: 'negative',
+                headline: 'Google Faces $50 Billion Antitrust Fine',
+                details: 'Regulators impose massive antitrust penalties on Google, threatening future business operations.',
+                impact: 'Stock price may crash 8-15%',
+                priceEffect: -0.12
+            },
+            
+            // Microsoft News
+            {
+                symbol: 'MSFT',
+                type: 'positive',
+                headline: 'Microsoft AI Becomes Sentient',
+                details: 'Microsoft claims breakthrough in artificial general intelligence, stock price rockets on the news.',
+                impact: 'Stock price may double',
+                priceEffect: 0.25
+            },
+            {
+                symbol: 'MSFT',
+                type: 'negative',
+                headline: 'Microsoft Cloud Suffers Global Outage',
+                details: 'Massive Azure outage affects millions of businesses worldwide, raising reliability concerns.',
+                impact: 'Stock price may plummet 5-10%',
+                priceEffect: -0.08
+            },
+            
+            // Tesla News
+            {
+                symbol: 'TSLA',
+                type: 'positive',
+                headline: 'Tesla Achieves Full Autonomous Driving',
+                details: 'Tesla announces complete self-driving capability, obtaining regulatory approval worldwide.',
+                impact: 'Stock price may explode 20-40%',
+                priceEffect: 0.30
+            },
+            {
+                symbol: 'TSLA',
+                type: 'negative',
+                headline: 'Tesla Recalls All Vehicles Due to Battery Fire Risk',
+                details: 'Tesla issues unprecedented recall of all vehicles due to critical battery safety concerns.',
+                impact: 'Stock price may crash 15-25%',
+                priceEffect: -0.20
+            },
+            {
+                symbol: 'TSLA',
+                type: 'positive',
+                headline: 'Tesla Robot Army Begins Production',
+                details: 'Tesla humanoid robots enter mass production, creating entirely new revenue stream.',
+                impact: 'Stock price may surge 15-30%',
+                priceEffect: 0.22
+            },
+            
+            // NVIDIA News
+            {
+                symbol: 'NVDA',
+                type: 'positive',
+                headline: 'NVIDIA AI Chip Shortage Drives Prices Sky High',
+                details: 'Unprecedented demand for NVIDIA AI processors creates massive supply shortage and price increases.',
+                impact: 'Stock price may rocket 25-50%',
+                priceEffect: 0.35
+            },
+            {
+                symbol: 'NVDA',
+                type: 'negative',
+                headline: 'NVIDIA Faces Export Ban to Major Markets',
+                details: 'Government export restrictions severely limit NVIDIA chip sales to key international markets.',
+                impact: 'Stock price may crash 20-30%',
+                priceEffect: -0.25
+            },
+            
+            // Netflix News
+            {
+                symbol: 'NFLX',
+                type: 'positive',
+                headline: 'Netflix Acquires Disney in Mega Deal',
+                details: 'Netflix announces shock acquisition of Disney, creating entertainment super-giant.',
+                impact: 'Stock price may explode 30-50%',
+                priceEffect: 0.40
+            },
+            {
+                symbol: 'NFLX',
+                type: 'negative',
+                headline: 'Netflix Loses 50 Million Subscribers',
+                details: 'Massive subscriber exodus hits Netflix as competitors gain ground with better content.',
+                impact: 'Stock price may crash 20-35%',
+                priceEffect: -0.28
+            },
+            
+            // Amazon News
+            {
+                symbol: 'AMZN',
+                type: 'positive',
+                headline: 'Amazon Drone Delivery Goes Global',
+                details: 'Amazon launches worldwide drone delivery service, revolutionizing e-commerce logistics.',
+                impact: 'Stock price may surge 15-25%',
+                priceEffect: 0.20
+            },
+            {
+                symbol: 'AMZN',
+                type: 'negative',
+                headline: 'Amazon Warehouse Workers Strike Globally',
+                details: 'Coordinated worldwide strike by Amazon workers threatens to shut down operations.',
+                impact: 'Stock price may fall 10-20%',
+                priceEffect: -0.15
+            },
+            
+            // Meta News
+            {
+                symbol: 'META',
+                type: 'positive',
+                headline: 'Meta Metaverse Reaches 1 Billion Users',
+                details: 'Meta\'s virtual reality platform achieves massive adoption milestone, validating metaverse strategy.',
+                impact: 'Stock price may explode 20-40%',
+                priceEffect: 0.30
+            },
+            {
+                symbol: 'META',
+                type: 'negative',
+                headline: 'Meta Faces Government Shutdown Order',
+                details: 'Regulators threaten to shut down Meta platforms over privacy violations and misinformation.',
+                impact: 'Stock price may collapse 25-40%',
+                priceEffect: -0.32
+            },
+            
+            // Alibaba News
+            {
+                symbol: 'BABA',
+                type: 'positive',
+                headline: 'Alibaba Becomes China\'s Official Trade Platform',
+                details: 'Chinese government designates Alibaba as primary international trade platform, boosting prospects.',
+                impact: 'Stock price may surge 20-35%',
+                priceEffect: 0.28
+            },
+            {
+                symbol: 'BABA',
+                type: 'negative',
+                headline: 'Alibaba Faces Nationalization Threat',
+                details: 'Chinese authorities consider nationalizing Alibaba amid growing state control of tech sector.',
+                impact: 'Stock price may crash 30-50%',
+                priceEffect: -0.40
+            },
+            
+            // Visa News
+            {
+                symbol: 'V',
+                type: 'positive',
+                headline: 'Visa Becomes Global Digital Currency Standard',
+                details: 'Visa technology adopted as backbone for new international digital currency system.',
+                impact: 'Stock price may rocket 25-40%',
+                priceEffect: 0.32
+            },
+            {
+                symbol: 'V',
+                type: 'negative',
+                headline: 'Visa Systems Hacked in Massive Breach',
+                details: 'Major security breach compromises millions of Visa transactions, raising security concerns.',
+                impact: 'Stock price may plummet 15-25%',
+                priceEffect: -0.20
+            }
+        ];
+
+        let usedNews = [];
+        let usedMajorEvents = [];
+        let lastNewsTime = 0;
+        let lastMajorEventTime = 0;
+
+        // Game state
+        let gameState = {
+            cash: 10000,
+            holdings: {},
+            transactions: [],
+            totalTrades: 0
+        };
+
+        // Stock data with realistic companies
+        let stocks = {
+            'AAPL': { company: 'Apple Inc.', price: 150.00, change: 0 },
+            'GOOGL': { company: 'Alphabet Inc.', price: 2800.00, change: 0 },
+            'MSFT': { company: 'Microsoft Corp.', price: 350.00, change: 0 },
+            'AMZN': { company: 'Amazon.com Inc.', price: 3200.00, change: 0 },
+            'TSLA': { company: 'Tesla Inc.', price: 800.00, change: 0 },
+            'NFLX': { company: 'Netflix Inc.', price: 500.00, change: 0 },
+            'NVDA': { company: 'NVIDIA Corp.', price: 600.00, change: 0 },
+            'META': { company: 'Meta Platforms', price: 300.00, change: 0 },
+            'BABA': { company: 'Alibaba Group', price: 90.00, change: 0 },
+            'V': { company: 'Visa Inc.', price: 220.00, change: 0 }
+        };
+
+        // Game control functions
+        function startGame() {
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            
+            updateGameStatus('Market Running - Prices Updating Live', 'status-running');
+            
+            // Start market simulation with more frequent updates
+            priceUpdateInterval = setInterval(updateStockPrices, 6000);
+            newsUpdateInterval = setInterval(generateNews, 10000);
+            shockInterval = setInterval(generateMajorEvent, 25000); // Major events every 25 seconds
+            tickerUpdateInterval = setInterval(updateNewsTicker, 5000);
+            
+            showMessage('Market started! Watch out for major market events and price shocks!', 'success');
+        }
+
+        function pauseGame() {
+            if (!gameRunning) return;
+            
+            gameRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            
+            updateGameStatus('Market Paused - Analyze and Trade', 'status-paused');
+            
+            // Clear intervals
+            if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+            if (newsUpdateInterval) clearInterval(newsUpdateInterval);
+            if (shockInterval) clearInterval(shockInterval);
+            if (tickerUpdateInterval) clearInterval(tickerUpdateInterval);
+            
+            showMessage('Market paused. Perfect time to analyze trends after market events!', 'success');
+        }
+
+        function resetGame() {
+            // Stop the game
+            gameRunning = false;
+            if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+            if (newsUpdateInterval) clearInterval(newsUpdateInterval);
+            if (shockInterval) clearInterval(shockInterval);
+            if (tickerUpdateInterval) clearInterval(tickerUpdateInterval);
+            
+            // Reset game state
+            gameState = {
+                cash: 10000,
+                holdings: {},
+                transactions: [],
+                totalTrades: 0
+            };
+            
+            // Reset stock prices to initial values
+            stocks = {
+                'AAPL': { company: 'Apple Inc.', price: 150.00, change: 0 },
+                'GOOGL': { company: 'Alphabet Inc.', price: 2800.00, change: 0 },
+                'MSFT': { company: 'Microsoft Corp.', price: 350.00, change: 0 },
+                'AMZN': { company: 'Amazon.com Inc.', price: 3200.00, change: 0 },
+                'TSLA': { company: 'Tesla Inc.', price: 800.00, change: 0 },
+                'NFLX': { company: 'Netflix Inc.', price: 500.00, change: 0 },
+                'NVDA': { company: 'NVIDIA Corp.', price: 600.00, change: 0 },
+                'META': { company: 'Meta Platforms', price: 300.00, change: 0 },
+                'BABA': { company: 'Alibaba Group', price: 90.00, change: 0 },
+                'V': { company: 'Visa Inc.', price: 220.00, change: 0 }
+            };
+            
+            // Reset news
+            usedNews = [];
+            usedMajorEvents = [];
+            lastNewsTime = 0;
+            lastMajorEventTime = 0;
+            
+            // Reset UI
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            updateGameStatus('Market Stopped - Press Start to Begin Trading', 'status-stopped');
+            
+            // Clear news
+            document.getElementById('breakingNews').innerHTML = '';
+            document.getElementById('newsStream').innerHTML = `
+                <div class="news-item">
+                    <div class="news-headline">Game Reset - Ready for New Challenge!</div>
+                    <div class="news-details">Your portfolio has been reset to $10,000. Start the market when you're ready for market shocks and exciting trading!</div>
+                    <div class="news-timestamp">Just now</div>
+                </div>
+            `;
+            
+            // Update displays
+            renderStockList();
+            renderPortfolio();
+            updatePortfolioSummary();
+            renderTransactionHistory();
+            
+            showMessage('Game reset! You now have $10,000 to start fresh. Get ready for market volatility!', 'success');
+        }
+
+        function updateGameStatus(text, className) {
+            const statusElement = document.getElementById('gameStatus');
+            statusElement.textContent = text;
+            statusElement.className = `game-status ${className}`;
+        }
+
+        // Generate major market events (crashes and booms)
+        function generateMajorEvent() {
+            if (!gameRunning) return;
+            
+            const now = Date.now();
+            if (now - lastMajorEventTime < 20000) return; // At least 20 seconds between major events
+
+            if (Math.random() < 0.6) { // 60% chance of major event
+                const availableEvents = majorEvents.filter(event => !usedMajorEvents.includes(event));
+                if (availableEvents.length === 0) {
+                    usedMajorEvents = [];
+                    return;
+                }
+
+                const selectedEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+                usedMajorEvents.push(selectedEvent);
+                lastMajorEventTime = now;
+
+                displayMajorEvent(selectedEvent);
+                applyMajorEventEffect(selectedEvent);
+            }
+        }
+
+        // Display major market events with dramatic styling
+        function displayMajorEvent(event) {
+            const breakingNews = document.getElementById('breakingNews');
+            
+            const eventClass = event.type === 'market_crash' ? 'market-crash' : 'market-boom';
+            const badge = event.type === 'market_crash' ? '💥 CRASH' : '🚀 BOOM';
+            
+            breakingNews.innerHTML = `
+                <div class="${eventClass}">
+                    <span class="news-badge">${badge}</span>
+                    <strong>${event.headline}</strong>
+                </div>
+            `;
+            
+            // Show for longer time for major events
+            setTimeout(() => {
+                breakingNews.innerHTML = '';
+            }, 20000);
+
+            // Also add to news stream
+            const newsStream = document.getElementById('newsStream');
+            const newsItem = document.createElement('div');
+            newsItem.className = `news-item ${event.type === 'market_crash' ? 'negative' : 'positive'}`;
+            newsItem.innerHTML = `
+                <div class="news-headline">${event.headline}</div>
+                <div class="news-details">${event.details}</div>
+                <div class="news-impact impact-${event.type === 'market_crash' ? 'negative' : 'positive'}">${event.impact}</div>
+                <div class="news-timestamp">${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            newsStream.insertBefore(newsItem, newsStream.firstChild);
+            
+            while (newsStream.children.length > 8) {
+                newsStream.removeChild(newsStream.lastChild);
+            }
+        }
+
+        // Apply major event effects to all stocks
+        function applyMajorEventEffect(event) {
+            for (let symbol in stocks) {
+                const baseEffect = event.priceEffect;
+                const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
+                const finalEffect = baseEffect + variation;
+                
+                stocks[symbol].price *= (1 + finalEffect);
+                stocks[symbol].price = Math.max(stocks[symbol].price, 1);
+                stocks[symbol].change = stocks[symbol].price * finalEffect;
+            }
+            
+            // Immediate UI update for dramatic effect
+            renderStockList();
+            updatePortfolioSummary();
+            
+            const eventType = event.type === 'market_crash' ? 'Market crash' : 'Market boom';
+            showMessage(`${eventType} occurred! Check your portfolio immediately!`, event.type === 'market_crash' ? 'error' : 'success');
+        }
+
+        // Generate regular news events
+        function generateNews() {
+            if (!gameRunning) return;
+            
+            const now = Date.now();
+            if (now - lastNewsTime < 6000) return;
+
+            if (Math.random() < 0.7) { // 70% chance of regular news
+                const availableNews = newsEvents.filter(news => !usedNews.includes(news));
+                if (availableNews.length === 0) {
+                    usedNews = [];
+                    return;
+                }
+
+                const selectedNews = availableNews[Math.floor(Math.random() * availableNews.length)];
+                usedNews.push(selectedNews);
+                lastNewsTime = now;
+
+                displayNews(selectedNews);
+                applyNewsEffect(selectedNews);
+            }
+        }
+
+        // Display regular news
+        function displayNews(news) {
+            const newsStream = document.getElementById('newsStream');
+            const breakingNews = document.getElementById('breakingNews');
+            
+            // Show as breaking news if impact is high
+            if (Math.abs(news.priceEffect) > 0.1) {
+                breakingNews.innerHTML = `
+                    <div class="breaking-news">
+                        <span class="news-badge">🚨 BREAKING</span>
+                        <strong>${news.headline}</strong>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    breakingNews.innerHTML = '';
+                }, 12000);
+            }
+            
+            const newsItem = document.createElement('div');
+            newsItem.className = `news-item ${news.type}`;
+            newsItem.innerHTML = `
+                <div class="news-headline">${news.headline}</div>
+                <div class="news-details">${news.details}</div>
+                <div class="news-impact impact-${news.type}">${news.impact}</div>
+                <div class="news-timestamp">${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            newsStream.insertBefore(newsItem, newsStream.firstChild);
+            
+            while (newsStream.children.length > 8) {
+                newsStream.removeChild(newsStream.lastChild);
+            }
+        }
+
+        // Apply news effect to specific stock
+        function applyNewsEffect(news) {
+            const stock = stocks[news.symbol];
+            if (stock) {
+                const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
+                const finalEffect = news.priceEffect + variation;
+                
+                const oldPrice = stock.price;
+                stock.price *= (1 + finalEffect);
+                stock.price = Math.max(stock.price, 1);
+                stock.change = stock.price - oldPrice;
+                
+                // Show message for significant price moves
+                if (Math.abs(finalEffect) > 0.08) {
+                    const direction = finalEffect > 0 ? 'surged' : 'plummeted';
+                    const percentage = (Math.abs(finalEffect) * 100).toFixed(1);
+                    showMessage(`${news.symbol} ${direction} ${percentage}% on breaking news!`, finalEffect > 0 ? 'success' : 'error');
+                }
+            }
+        }
+
+        // Update news ticker with exciting messages
+        function updateNewsTicker() {
+            const ticker = document.getElementById('newsTicker');
+            const messages = [
+                '🔥 MARKETS LIVE • Expect sudden price shocks and market booms',
+                '⚡ HIGH VOLATILITY WARNING • Major events can trigger massive price swings',
+                '🎯 Trade smart during crashes and booms • Fortunes made and lost in seconds',
+                '📈 BREAKING: Market conditions extremely volatile • Stay alert for opportunities',
+                '💥 SHOCK EVENTS POSSIBLE • Fed meetings, crashes, and booms expected',
+                '🚨 LIVE TRADING • React fast to breaking news and market events'
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            ticker.textContent = randomMessage;
+        }
+
+        // Enhanced stock price updates with more volatility
+        function updateStockPrices() {
+            if (!gameRunning) return;
+            
+            for (let symbol in stocks) {
+                const stock = stocks[symbol];
+                
+                // More volatile price movements
+                let changePercent = (Math.random() - 0.5) * 0.06; // ±3% base volatility
+                
+                // Add some trending behavior
+                if (Math.random() < 0.3) {
+                    changePercent *= 2; // 30% chance of double volatility
+                }
+                
+                const priceChange = stock.price * changePercent;
+                stock.price = Math.max(stock.price + priceChange, 1);
+                stock.change = priceChange;
+            }
+            
+            renderStockList();
+            updatePortfolioSummary();
+        }
+
+        // Initialize the game
+        function initGame() {
+            renderStockList();
+            renderPortfolio();
+            updatePortfolioSummary();
+            populateStockSelect();
+            updateNewsTicker();
+            updateGameStatus('Market Stopped - Press Start to Begin Trading', 'status-stopped');
+        }
+
+        // Render the stock list with enhanced visual feedback
+        function renderStockList() {
+            const stockList = document.getElementById('stockList');
+            stockList.innerHTML = '';
+            
+            for (let symbol in stocks) {
+                const stock = stocks[symbol];
+                const changeClass = stock.change >= 0 ? 'change-positive' : 'change-negative';
+                const priceClass = stock.change >= 0 ? 'price-positive' : 'price-negative';
+                const changeText = stock.change >= 0 ? '+' : '';
+                
+                const stockItem = document.createElement('div');
+                stockItem.className = 'stock-item';
+                
+                // Add visual emphasis for large changes
+                if (Math.abs(stock.change / stock.price) > 0.05) {
+                    stockItem.style.borderLeftWidth = '6px';
+                    stockItem.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }
+                
+                stockItem.innerHTML = `
+                    <div class="stock-info">
+                        <div class="stock-symbol">${symbol}</div>
+                        <div class="stock-company">${stock.company}</div>
+                    </div>
+                    <div class="stock-price ${priceClass}">${stock.price.toFixed(2)}</div>
+                    <div class="stock-change ${changeClass}">
+                        ${changeText}${stock.change.toFixed(2)} (${((stock.change / stock.price) * 100).toFixed(2)}%)
+                    </div>
+                    <div class="trade-actions">
+                        <button class="btn btn-buy" onclick="quickTrade('${symbol}', 'buy')">Buy</button>
+                        <button class="btn btn-sell" onclick="quickTrade('${symbol}', 'sell')">Sell</button>
+                    </div>
+                `;
+                stockList.appendChild(stockItem);
+            }
+        }
+
+        // Populate stock select dropdown
+        function populateStockSelect() {
+            const select = document.getElementById('tradeSymbol');
+            select.innerHTML = '<option value="">Select a stock</option>';
+            
+            for (let symbol in stocks) {
+                const option = document.createElement('option');
+                option.value = symbol;
+                option.textContent = `${symbol} - ${stocks[symbol].company}`;
+                select.appendChild(option);
+            }
+        }
+
+        // Quick trade function
+        function quickTrade(symbol, type) {
+            document.getElementById('tradeSymbol').value = symbol;
+            document.getElementById('tradeType').value = type;
+            document.getElementById('tradeShares').value = 1;
+            document.getElementById('tradeShares').focus();
+        }
+
+        // Execute trade with enhanced feedback
+        function executeTrade() {
+            const symbol = document.getElementById('tradeSymbol').value;
+            const type = document.getElementById('tradeType').value;
+            const shares = parseInt(document.getElementById('tradeShares').value);
+
+            if (!symbol || !shares || shares <= 0) {
+                showMessage('Please select a stock and enter a valid number of shares.', 'error');
+                return;
+            }
+
+            const stock = stocks[symbol];
+            const totalCost = stock.price * shares;
+
+            if (type === 'buy') {
+                if (gameState.cash < totalCost) {
+                    showMessage('Insufficient funds for this purchase.', 'error');
+                    return;
+                }
+                
+                gameState.cash -= totalCost;
+                gameState.holdings[symbol] = (gameState.holdings[symbol] || 0) + shares;
+                
+                showMessage(`✅ Successfully bought ${shares} shares of ${symbol} for ${totalCost.toFixed(2)}`, 'success');
+            } else {
+                if (!gameState.holdings[symbol] || gameState.holdings[symbol] < shares) {
+                    showMessage('You don\'t have enough shares to sell.', 'error');
+                    return;
+                }
+                
+                gameState.cash += totalCost;
+                gameState.holdings[symbol] -= shares;
+                
+                if (gameState.holdings[symbol] === 0) {
+                    delete gameState.holdings[symbol];
+                }
+                
+                showMessage(`💰 Successfully sold ${shares} shares of ${symbol} for ${totalCost.toFixed(2)}`, 'success');
+            }
+
+            gameState.transactions.unshift({
+                symbol: symbol,
+                type: type,
+                shares: shares,
+                price: stock.price,
+                total: totalCost,
+                timestamp: new Date().toLocaleString()
+            });
+
+            gameState.totalTrades++;
+
+            document.getElementById('tradeSymbol').value = '';
+            document.getElementById('tradeShares').value = '';
+
+            renderPortfolio();
+            updatePortfolioSummary();
+            renderTransactionHistory();
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = `<div class="message ${type}">${text}</div>`;
+            
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        // Render portfolio
+        function renderPortfolio() {
+            const holdingsList = document.getElementById('holdingsList');
+            
+            if (Object.keys(gameState.holdings).length === 0) {
+                holdingsList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No holdings yet. Start trading during market volatility!</p>';
+                return;
+            }
+
+            holdingsList.innerHTML = '';
+            
+            for (let symbol in gameState.holdings) {
+                const shares = gameState.holdings[symbol];
+                const currentPrice = stocks[symbol].price;
+                const totalValue = shares * currentPrice;
+                
+                const holdingItem = document.createElement('div');
+                holdingItem.className = 'holding-item';
+                holdingItem.innerHTML = `
+                    <div class="holding-info">
+                        <div class="holding-symbol">${symbol}</div>
+                        <div class="holding-shares">${shares} shares @ ${currentPrice.toFixed(2)}</div>
+                    </div>
+                    <div class="holding-value">${totalValue.toFixed(2)}</div>
+                `;
+                holdingsList.appendChild(holdingItem);
+            }
+        }
+
+        // Update portfolio summary with enhanced visual feedback
+        function updatePortfolioSummary() {
+            const portfolioValue = calculatePortfolioValue();
+            const initialValue = 10000;
+            const profitLoss = portfolioValue - initialValue;
+            const profitLossPercent = ((profitLoss / initialValue) * 100).toFixed(2);
+            
+            document.getElementById('totalValue').textContent = `${portfolioValue.toFixed(2)}`;
+            document.getElementById('availableCash').textContent = `${gameState.cash.toFixed(2)}`;
+            document.getElementById('totalPL').textContent = `${profitLoss.toFixed(2)} (${profitLossPercent}%)`;
+            document.getElementById('tradeCount').textContent = gameState.totalTrades;
+            
+            const plElement = document.getElementById('totalPL');
+            plElement.style.color = profitLoss >= 0 ? '#4CAF50' : '#f44336';
+            
+            // Add visual emphasis for large gains/losses
+            if (Math.abs(profitLoss) > 2000) {
+                plElement.style.fontSize = '1.8em';
+                plElement.style.fontWeight = 'bold';
+            } else {
+                plElement.style.fontSize = '1.5em';
+            }
+        }
+
+        // Calculate total portfolio value
+        function calculatePortfolioValue() {
+            let holdingsValue = 0;
+            
+            for (let symbol in gameState.holdings) {
+                const shares = gameState.holdings[symbol];
+                const currentPrice = stocks[symbol].price;
+                holdingsValue += shares * currentPrice;
+            }
+            
+            return gameState.cash + holdingsValue;
+        }
+
+        // Render transaction history
+        function renderTransactionHistory() {
+            const historyDiv = document.getElementById('transactionHistory');
+            
+            if (gameState.transactions.length === 0) {
+                historyDiv.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No transactions yet.</p>';
+                return;
+            }
+
+            historyDiv.innerHTML = '';
+            
+            gameState.transactions.slice(0, 10).forEach(transaction => {
+                const transactionItem = document.createElement('div');
+                transactionItem.className = 'transaction-item';
+                transactionItem.innerHTML = `
+                    <div>
+                        <span class="transaction-type type-${transaction.type}">${transaction.type.toUpperCase()}</span>
+                        <strong>${transaction.symbol}</strong> - ${transaction.shares} shares @ ${transaction.price.toFixed(2)}
+                    </div>
+                    <div>
+                        <strong>${transaction.total.toFixed(2)}</strong>
+                        <div style="font-size: 0.8em; color: #666;">${transaction.timestamp}</div>
+                    </div>
+                `;
+                historyDiv.appendChild(transactionItem);
+            });
+        }
+
+        // Toggle instructions modal
+        function toggleInstructions() {
+            const modal = document.getElementById('instructionsModal');
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('instructionsModal');
+            if (event.target === modal) {
+                toggleInstructions();
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('instructionsModal');
+                if (modal.style.display === 'block') {
+                    toggleInstructions();
+                }
+            }
+        });
+
+        // Initialize the game when page loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
